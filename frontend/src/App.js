@@ -311,8 +311,11 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 pl-20">
       <div className="flex h-screen">
         {/* Left Panel - City Data */}
-        <div className="w-80 p-6 bg-black/20 backdrop-blur-lg border-r border-white/10 overflow-y-auto">
-          <h2 className="text-xl font-bold text-white mb-6">Local Incidents</h2>
+        <div className="w-80 p-6 bg-black/5 backdrop-blur-xl border-r border-white/5 overflow-y-auto">
+          <h2 className="text-xl font-bold text-white mb-6 flex items-center">
+            <span className="mr-2">🏙️</span>
+            Local Incidents
+          </h2>
           
           <InfoSection title="Critical" items={dashboardData?.city_data?.critical || []} severity="critical" />
           <InfoSection title="Moderate" items={dashboardData?.city_data?.moderate || []} severity="moderate" />
@@ -320,13 +323,18 @@ const Dashboard = () => {
         </div>
 
         {/* Center - Map */}
-        <div className="flex-1 relative">
-          <MapCanvas reports={dashboardData?.reports || []} shelters={dashboardData?.shelters || []} />
+        <div className="flex-1 relative p-4">
+          <div className="h-full bg-black/5 backdrop-blur-xl rounded-2xl border border-white/5 overflow-hidden">
+            <MapCanvas reports={dashboardData?.reports || []} shelters={dashboardData?.shelters || []} />
+          </div>
         </div>
 
         {/* Right Panel - World Data */}
-        <div className="w-80 p-6 bg-black/20 backdrop-blur-lg border-l border-white/10 overflow-y-auto">
-          <h2 className="text-xl font-bold text-white mb-6">Global Incidents</h2>
+        <div className="w-80 p-6 bg-black/5 backdrop-blur-xl border-l border-white/5 overflow-y-auto">
+          <h2 className="text-xl font-bold text-white mb-6 flex items-center">
+            <span className="mr-2">🌍</span>
+            Global Incidents
+          </h2>
           
           <InfoSection title="Critical" items={dashboardData?.world_data?.critical || []} severity="critical" />
           <InfoSection title="Moderate" items={dashboardData?.world_data?.moderate || []} severity="moderate" />
