@@ -536,21 +536,21 @@ const FooterClock = ({ lastAiUpdate }) => {
   }, []);
 
   return (
-    <div className="fixed bottom-0 left-20 right-0 h-14 bg-black/20 backdrop-blur-lg border-t border-white/10 flex items-center justify-between px-6">
-      <p className="text-white/70 text-sm">© DisasterDash 2024</p>
+    <div className="fixed bottom-0 left-20 right-0 h-14 bg-black/5 backdrop-blur-xl border-t border-white/5 flex items-center justify-between px-6">
+      <p className="text-white/60 text-sm">© DisasterDash 2024</p>
       
       <div className="flex items-center space-x-4">
         <div className="text-center">
           <p className="text-white font-mono text-sm">{currentTime.toLocaleTimeString()}</p>
-          <p className="text-white/50 text-xs">Local Time</p>
+          <p className="text-white/40 text-xs">Local Time</p>
         </div>
       </div>
 
       <div className="flex items-center space-x-2">
-        <p className="text-white/70 text-sm">
+        <p className="text-white/60 text-sm">
           Last AI Update: {lastAiUpdate ? new Date(lastAiUpdate).toLocaleTimeString() : 'Never'}
         </p>
-        <button className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors">
+        <button className="p-2 bg-white/5 backdrop-blur-sm rounded-lg hover:bg-white/10 transition-colors">
           <span className="text-white text-xs">🔄</span>
         </button>
       </div>
