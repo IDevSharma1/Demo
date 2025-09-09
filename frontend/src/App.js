@@ -351,9 +351,9 @@ const Dashboard = () => {
 const InfoSection = ({ title, items, severity }) => {
   const getColorClass = () => {
     switch (severity) {
-      case 'critical': return 'text-red-400 border-red-500/20 bg-red-500/10';
-      case 'moderate': return 'text-orange-400 border-orange-500/20 bg-orange-500/10';
-      default: return 'text-green-400 border-green-500/20 bg-green-500/10';
+      case 'critical': return 'text-red-400 border-red-500/10 bg-red-500/5';
+      case 'moderate': return 'text-orange-400 border-orange-500/10 bg-orange-500/5';
+      default: return 'text-green-400 border-green-500/10 bg-green-500/5';
     }
   };
 
@@ -362,13 +362,13 @@ const InfoSection = ({ title, items, severity }) => {
       <h3 className={`text-lg font-semibold mb-3 ${getColorClass().split(' ')[0]}`}>{title}</h3>
       <div className="space-y-2">
         {items.length === 0 ? (
-          <p className="text-white/50 text-sm">No incidents reported</p>
+          <p className="text-white/40 text-sm">No incidents reported</p>
         ) : (
           items.map((item, index) => (
-            <div key={index} className={`p-3 rounded-xl border ${getColorClass()}`}>
+            <div key={index} className={`p-3 rounded-xl border backdrop-blur-sm ${getColorClass()}`}>
               <h4 className="text-white font-medium text-sm mb-1">{item.title}</h4>
-              <p className="text-white/70 text-xs mb-2">{item.city}, {item.country}</p>
-              <p className="text-white/50 text-xs">{new Date(item.created_at).toLocaleTimeString()}</p>
+              <p className="text-white/60 text-xs mb-2">{item.city}, {item.country}</p>
+              <p className="text-white/40 text-xs">{new Date(item.created_at).toLocaleTimeString()}</p>
             </div>
           ))
         )}
