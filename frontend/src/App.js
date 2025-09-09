@@ -370,36 +370,150 @@ const InfoSection = ({ title, items, severity }) => {
 };
 
 const MapCanvas = ({ reports, shelters }) => {
-  return (
-    <div className="h-full w-full relative bg-slate-800">
-      {/* Map Placeholder */}
-      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🗺️</div>
-          <h3 className="text-2xl font-bold text-white mb-2">Interactive Map</h3>
-          <p className="text-white/70 mb-4">Map API integration needed</p>
-          <div className="grid grid-cols-2 gap-4 max-w-sm">
-            <button className="p-3 bg-red-500/20 text-red-400 rounded-xl border border-red-500/20">
-              📍 {reports.length} Reports
-            </button>
-            <button className="p-3 bg-blue-500/20 text-blue-400 rounded-xl border border-blue-500/20">
-              🏠 {shelters.length} Shelters
-            </button>
-          </div>
-        </div>
-      </div>
+  const [mapCenter, setMapCenter] = useState([40.7128, -74.0060]); // Default to NYC
+  
+  useEffect(() => {
+    // Try to get user's location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setMapCenter([position.coords.latitude, position.coords.longitude]);
+        },
+        (error) => {
+          console.log("Location access denied, using default location");
+        }
+      );
+    }
+  }, []);
 
-      {/* Map Controls */}
-      <div className="absolute top-4 right-4 flex flex-col space-y-2">
-        <button className="p-3 bg-black/50 backdrop-blur-lg rounded-xl text-white border border-white/10 hover:bg-black/70">
+  return (
+    <div className="h-full w-full relative">
+      <MapContainer 
+        center={mapCenter} 
+        zoom={10} 
+        className="h-full w-full rounded-2xl overflow-hidden"
+        style={{ backgroundColor: 'transparent' }}
+      >
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+        />
+        
+        {/* Render report markers */}
+        {reports.map((report) => (
+          <Marker
+            key={report.id}
+            position={[report.location.lat, report.location.lng]}
+            icon={createCustomIcon(report.severity)}
+          >
+            <Popup className="custom-popup">
+              <div className="p-2 bg-black/80 backdrop-blur-lg rounded-lg border border-white/20">
+                <h3 className="font-bold text-white mb-1">{report.title}</h3>
+                <p className="text-white/80 text-sm mb-2">{report.description}</p>
+                <div className="flex justify-between items-center">
+                  <span className={`px-2 py-1 rounded text-xs ${
+                    report.severity === 'critical' ? 'bg-red-500/20 text-red-300' :
+                    report.severity === 'moderate' ? 'bg-orange-500/20 text-orange-300' :
+                    'bg-green-500/20 text-green-300'
+                  }`}>
+                    {report.severity}
+                  </span>
+                  <span className="text-white/60 text-xs">
+                    {new Date(report.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+        
+        {/* Render shelter markers */}
+        {shelters.map((shelter) => (
+          <CircleMarker
+            key={shelter.id}
+            center={[shelter.location.lat, shelter.location.lng]}
+            radius={8}
+            pathOptions={{
+              fillColor: '#3b82f6',
+              color: '#1d4ed8',
+              weight: 2,
+              opacity: 0.8,
+              fillOpacity: 0.6
+            }}
+          >
+            <Popup className="custom-popup">
+              <div className="p-2 bg-black/80 backdrop-blur-lg rounded-lg border border-white/20">
+                <h3 className="font-bold text-white mb-1">🏠 {shelter.name}</h3>
+                <p className="text-white/80 text-sm">Capacity: {shelter.capacity}</p>
+                <p className="text-white/80 text-sm">Contact: {shelter.contact}</p>
+                <p className="text-white/60 text-xs">Type: {shelter.type}</p>
+              </div>
+            </Popup>
+          </CircleMarker>
+        ))}
+      </MapContainer>
+
+      {/* Map Controls Overlay */}
+      <div className="absolute top-4 right-4 flex flex-col space-y-2 z-[1000]">
+        <button 
+          onClick={() => setMapCenter([40.7128, -74.0060])}
+          className="p-3 bg-black/30 backdrop-blur-lg rounded-xl text-white border border-white/20 hover:bg-black/50 transition-all duration-200"
+          title="New York"
+        >
+          🗽
+        </button>
+        <button 
+          onClick={() => setMapCenter([34.0522, -118.2437])}
+          className="p-3 bg-black/30 backdrop-blur-lg rounded-xl text-white border border-white/20 hover:bg-black/50 transition-all duration-200"
+          title="Los Angeles"
+        >
+          🌴
+        </button>
+        <button 
+          onClick={() => setMapCenter([51.5074, -0.1278])}
+          className="p-3 bg-black/30 backdrop-blur-lg rounded-xl text-white border border-white/20 hover:bg-black/50 transition-all duration-200"
+          title="London"
+        >
+          🇬🇧
+        </button>
+        <button 
+          onClick={() => {
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                (position) => {
+                  setMapCenter([position.coords.latitude, position.coords.longitude]);
+                }
+              );
+            }
+          }}
+          className="p-3 bg-black/30 backdrop-blur-lg rounded-xl text-white border border-white/20 hover:bg-black/50 transition-all duration-200"
+          title="My Location"
+        >
           📍
         </button>
-        <button className="p-3 bg-black/50 backdrop-blur-lg rounded-xl text-white border border-white/10 hover:bg-black/70">
-          🌍
-        </button>
-        <button className="p-3 bg-black/50 backdrop-blur-lg rounded-xl text-white border border-white/10 hover:bg-black/70">
-          🔍
-        </button>
+      </div>
+
+      {/* Map Legend */}
+      <div className="absolute bottom-4 left-4 p-4 bg-black/30 backdrop-blur-lg rounded-xl border border-white/20 z-[1000]">
+        <h4 className="text-white font-semibold mb-2 text-sm">Legend</h4>
+        <div className="space-y-1 text-xs">
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+            <span className="text-white/80">Critical</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+            <span className="text-white/80">Moderate</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <span className="text-white/80">Low Risk</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+            <span className="text-white/80">Shelters</span>
+          </div>
+        </div>
       </div>
     </div>
   );
