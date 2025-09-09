@@ -104,11 +104,11 @@ const Navbar = () => {
   if (!user) return null;
 
   return (
-    <nav className="fixed left-0 top-0 h-full w-20 hover:w-64 bg-black/20 backdrop-blur-lg border-r border-white/10 transition-all duration-300 z-50 group">
+    <nav className="fixed left-0 top-0 h-full w-20 hover:w-64 bg-black/10 backdrop-blur-xl border-r border-white/5 transition-all duration-300 z-50 group">
       <div className="flex flex-col h-full">
         {/* Logo */}
-        <div className="p-4 border-b border-white/10">
-          <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl flex items-center justify-center cursor-pointer" onClick={() => navigate('/dashboard')}>
+        <div className="p-4 border-b border-white/5">
+          <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl flex items-center justify-center cursor-pointer shadow-lg" onClick={() => navigate('/dashboard')}>
             <span className="text-white font-bold text-xl">DD</span>
           </div>
           <p className="text-white/70 text-sm mt-2 opacity-0 group-hover:opacity-100 transition-opacity">DisasterDash</p>
@@ -125,9 +125,9 @@ const Navbar = () => {
         </div>
 
         {/* User & Logout */}
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-white/5">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
               <span className="text-white text-sm font-semibold">{user.name?.[0]?.toUpperCase()}</span>
             </div>
             <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -143,7 +143,7 @@ const Navbar = () => {
 
 const NavItem = ({ icon, label, onClick }) => (
   <div 
-    className="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/10 cursor-pointer transition-colors group"
+    className="flex items-center space-x-3 p-3 rounded-xl hover:bg-white/5 cursor-pointer transition-all duration-200 group backdrop-blur-sm"
     onClick={onClick}
   >
     <span className="text-2xl">{icon}</span>
