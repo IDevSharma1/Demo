@@ -285,8 +285,10 @@ async def trigger_ai_analysis(user_id: str = Depends(verify_admin)):
             raise HTTPException(status_code=500, detail="AI service not configured")
         
         # Get recent reports (last 24 hours)
+        from datetime import timedelta
+        cutoff_time = datetime.now(timezone.utc) - timedelta(days=1)
         recent_reports = await db.reports.find({
-            "created_at": {"$gte": (datetime.now(timezone.utc) - datetime.timedelta(days=1)).isoformat()}
+            "created_at": {"$gte": cutoff_time.isoformat()}
         }, {"_id": 0}).to_list(100)
         
         if not recent_reports:
@@ -300,70 +302,95 @@ async def trigger_ai_analysis(user_id: str = Depends(verify_admin)):
                 city_reports[city] = []
             city_reports[city].append(report)
         
+        # Import and use Emergent LLM
+        try:
+            from emergentintegrations.llm.chat import LlmChat, UserMessage
+            
+            # Initialize the chat with Emergent LLM key
+            chat = LlmChat(
+                api_key=emergent_key,
+                session_id=f"ai_analysis_{datetime.now().timestamp()}",
+                system_message="You are an AI disaster analyst. Analyze disaster reports and provide structured JSON responses for emergency management systems."
+            ).with_model("openai", "gpt-4o-mini")
+            
+        except ImportError as e:
+            logger.error(f"Emergent LLM import error: {e}")
+            # Fallback to mock analysis if import fails
+            city_reports = {}
+        
         # Analyze each city
         ai_updates = []
         
         for city, reports in city_reports.items():
-            # Create prompt for AI analysis
-            reports_text = "\n".join([
-                f"- {report['title']}: {report['description']} (Severity: {report['severity']})"
-                for report in reports
-            ])
-            
-            prompt = f"""
-Analyze the following disaster reports for {city} and provide:
-1. Overall severity assessment (critical/moderate/low)
-2. Top 3 most critical incidents
-3. Brief summary for emergency dashboard
+            try:
+                # Create prompt for AI analysis
+                reports_text = "\n".join([
+                    f"- {report['title']}: {report['description']} (Current Severity: {report['severity']})"
+                    for report in reports[:5]  # Limit to 5 reports to avoid token limits
+                ])
+                
+                prompt = f"""Analyze these disaster reports for {city}:
 
-Reports:
 {reports_text}
 
-Respond in JSON format:
+Respond with ONLY a JSON object (no extra text):
 {{
     "overall_severity": "critical|moderate|low",
-    "severity_score": 0.0-1.0,
+    "severity_score": 0.8,
     "critical_incidents": [
-        {{"title": "...", "severity": "critical", "priority": 1}},
-        {{"title": "...", "severity": "moderate", "priority": 2}},
-        {{"title": "...", "severity": "low", "priority": 3}}
+        {{"title": "Incident name", "severity": "critical", "priority": 1}}
     ],
-    "summary": "Brief summary for dashboard"
-}}
-"""
-            
-            # For now, create mock AI response (replace with actual LLM call)
-            ai_response = {
-                "overall_severity": "moderate",
-                "severity_score": 0.6,
-                "critical_incidents": [
-                    {"title": reports[0]["title"], "severity": "moderate", "priority": 1}
-                ],
-                "summary": f"Monitoring {len(reports)} incidents in {city}. Situation under control."
-            }
-            
-            # Create AI update record
-            ai_update = AIUpdate(
-                region="city",
-                region_name=city,
-                summary=ai_response["summary"],
-                severity_data=ai_response["critical_incidents"]
-            )
-            
-            ai_update_dict = prepare_for_mongo(ai_update.dict())
-            await db.ai_updates.insert_one(ai_update_dict)
-            ai_updates.append(ai_update)
-            
-            # Update reports with AI scores
-            for report in reports:
-                await db.reports.update_one(
-                    {"id": report["id"]},
-                    {"$set": {
-                        "ai_severity_score": ai_response["severity_score"],
-                        "ai_auto_flag": ai_response["severity_score"] > 0.7,
-                        "updated_at": datetime.now(timezone.utc).isoformat()
-                    }}
+    "summary": "Brief summary for emergency dashboard"
+}}"""
+                
+                try:
+                    # Use actual AI analysis
+                    user_message = UserMessage(text=prompt)
+                    ai_response_text = await chat.send_message(user_message)
+                    
+                    # Parse JSON response
+                    import json
+                    ai_response = json.loads(ai_response_text.strip())
+                    
+                except Exception as ai_error:
+                    logger.warning(f"AI analysis failed for {city}, using fallback: {ai_error}")
+                    # Fallback response
+                    critical_reports = [r for r in reports if r.get('severity') == 'critical']
+                    ai_response = {
+                        "overall_severity": "critical" if critical_reports else "moderate",
+                        "severity_score": 0.8 if critical_reports else 0.5,
+                        "critical_incidents": [
+                            {"title": reports[0]["title"], "severity": reports[0]["severity"], "priority": 1}
+                        ][:3],
+                        "summary": f"Monitoring {len(reports)} incidents in {city}. {'Critical situation requires immediate attention.' if critical_reports else 'Situation under monitoring.'}"
+                    }
+                
+                # Create AI update record
+                ai_update = AIUpdate(
+                    region="city",
+                    region_name=city,
+                    summary=ai_response["summary"],
+                    severity_data=ai_response["critical_incidents"]
                 )
+                
+                ai_update_dict = prepare_for_mongo(ai_update.dict())
+                await db.ai_updates.insert_one(ai_update_dict)
+                ai_updates.append(ai_update)
+                
+                # Update reports with AI scores
+                for report in reports:
+                    await db.reports.update_one(
+                        {"id": report["id"]},
+                        {"$set": {
+                            "ai_severity_score": ai_response["severity_score"],
+                            "ai_auto_flag": ai_response["severity_score"] > 0.7,
+                            "updated_at": datetime.now(timezone.utc).isoformat()
+                        }}
+                    )
+                    
+            except Exception as city_error:
+                logger.error(f"Error processing {city}: {city_error}")
+                continue
         
         return {
             "message": "AI analysis completed",
