@@ -671,7 +671,7 @@ const AdminPanel = () => {
 };
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -685,7 +685,6 @@ const Profile = () => {
       if (sessionId) {
         try {
           const response = await axios.post(`${API}/auth/session`, { session_id: sessionId });
-          const { login } = useAuth();
           login(response.data.session_token, response.data.user);
           navigate('/dashboard');
         } catch (error) {
@@ -696,7 +695,7 @@ const Profile = () => {
     };
 
     handleSessionAuth();
-  }, [location, navigate]);
+  }, [location, navigate, login]);
 
   if (!user) {
     return <LoadingSpinner />;
